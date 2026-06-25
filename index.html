@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1e">
+<title>趨勢贏家 — 回測報告</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f4ff;
+    --muted: #7b8db0;
+    --green: #00d98b;
+    --green-dim: rgba(0,217,139,0.12);
+    --red: #ff4d6d;
+    --red-dim: rgba(255,77,109,0.12);
+    --blue: #4d9fff;
+    --blue-dim: rgba(77,159,255,0.12);
+    --amber: #ffb347;
+    --amber-dim: rgba(255,179,71,0.1);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    padding: 52px 20px 20px;
+    background: linear-gradient(180deg, #0d1525 0%, var(--bg) 100%);
+  }
+  .header-eyebrow {
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -.3px;
+  }
+  .header h1 span { color: var(--green); }
+  .header-sub {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--green-dim);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 12px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(.8)}
+  }
+
+  /* ── Section ── */
+  .section { padding: 0 16px; margin-bottom: 24px; }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  /* ── Hero Stats ── */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .hero-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card.accent-green { border-color: rgba(0,217,139,.25); }
+  .hero-card.accent-blue  { border-color: rgba(77,159,255,.2); }
+  .hero-card.wide {
+    grid-column: 1 / -1;
+  }
+  .hero-card .label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .04em;
+    margin-bottom: 6px;
+  }
+  .hero-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.5px;
+    line-height: 1;
+  }
+  .hero-card .value.green { color: var(--green); }
+  .hero-card .value.blue  { color: var(--blue); }
+  .hero-card .value.amber { color: var(--amber); }
+  .hero-card .sub-value {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+  .hero-card .glow {
+    position: absolute;
+    right: -20px; bottom: -20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: .25;
+  }
+  .accent-green .glow { background: var(--green); }
+  .accent-blue  .glow { background: var(--blue); }
+
+  /* ── TP Bar chart ── */
+  .tp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .tp-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .tp-card .tp-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .tp-card .tp-pct {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .tp-card.tp1 .tp-pct { color: var(--green); }
+  .tp-card.tp2 .tp-pct { color: var(--blue); }
+  .tp-card.tp3 .tp-pct { color: #a78bfa; }
+  .tp-card.sl  .tp-pct { color: var(--red); }
+  .bar-track {
+    height: 5px;
+    background: rgba(255,255,255,.07);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+  .tp1 .bar-fill { background: var(--green); }
+  .tp2 .bar-fill { background: var(--blue); }
+  .tp3 .bar-fill { background: #a78bfa; }
+  .sl  .bar-fill { background: var(--red); }
+  .tp-count { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* ── Summary row ── */
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .sr-label { font-size: 13px; color: var(--muted); }
+  .summary-row .sr-val   { font-size: 14px; font-weight: 600; }
+  .summary-row .sr-val.green { color: var(--green); }
+  .summary-row .sr-val.red   { color: var(--red); }
+  .summary-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px 16px;
+  }
+
+  /* ── Tab nav ── */
+  .tab-wrap {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-wrap::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab-btn.active {
+    background: var(--green);
+    color: #000;
+    border-color: var(--green);
+    font-weight: 700;
+  }
+
+  /* ── Ranking table ── */
+  .rank-list { display: flex; flex-direction: column; gap: 8px; }
+  .rank-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .rank-item:active { border-color: var(--green); }
+  .rank-num {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 22px;
+    text-align: center;
+  }
+  .rank-num.gold   { color: #ffd700; }
+  .rank-num.silver { color: #c0c0c0; }
+  .rank-num.bronze { color: #cd7f32; }
+  .rank-body { flex: 1; min-width: 0; }
+  .rank-sym {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rank-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .rank-right { text-align: right; }
+  .rank-wr {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .rank-pnl {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .rank-pnl.pos { color: var(--green); }
+  .rank-pnl.neg { color: var(--red); }
+
+  /* ── Search ── */
+  .search-wrap {
+    padding: 0 16px;
+    margin-bottom: 14px;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: var(--green); }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: rgba(10,15,30,.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-label { font-size: 10px; color: var(--muted); }
+  .nav-item.active .nav-label { color: var(--green); }
+  .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px var(--green)); }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    margin: 0 16px 20px;
+    background: var(--amber-dim);
+    border: 1px solid rgba(255,179,71,.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--amber);
+    line-height: 1.6;
+  }
+
+  /* ── About ── */
+  .about-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin: 0 16px 14px;
+  }
+  .about-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .about-card p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ PAGE: 總覽 ══════════ -->
+<div id="page-home" class="page active">
+
+  <div class="header">
+    <div class="header-eyebrow">Binance Futures · 1H · EMA 120/240</div>
+    <h1>趨勢贏家<br><span>回測報告</span></h1>
+    <p class="header-sub">636 個合約 · 本金 10,000U · 手續費 0.06%</p>
+    <div class="live-badge"><div class="live-dot"></div>2026-06-25 更新</div>
+  </div>
+
+  <!-- 核心數字 -->
+  <div class="section">
+    <div class="section-label">核心績效</div>
+    <div class="hero-grid">
+      <div class="hero-card accent-green wide">
+        <div class="label">最終資產</div>
+        <div class="value green">25,319 U</div>
+        <div class="sub-value">本金 10,000U → 獲利 +153.2% ↑</div>
+        <div class="glow"></div>
+      </div>
+      <div class="hero-card accent-green">
+        <div class="label">整體勝率</div>
+        <div class="value green">63.2%</div>
+        <div class="sub-value">502 勝 / 794 筆</div>
+        <div class="glow"></div>
+      </div>
+      <div class="hero-card accent-blue">
+        <div class="label">盈虧比</div>
+        <div class="value blue">1.15x</div>
+        <div class="sub-value">獲利÷虧損</div>
+        <div class="glow"></div>
+      </div>
+      <div class="hero-card">
+        <div class="label">總損益</div>
+        <div class="value green">+15,320 U</div>
+        <div class="sub-value">手續費 957U 已扣</div>
+      </div>
+      <div class="hero-card">
+        <div class="label">測試幣種</div>
+        <div class="value amber">636</div>
+        <div class="sub-value">有效訊號 798 筆</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TP 分布 -->
+  <div class="section">
+    <div class="section-label">止盈止損分布</div>
+    <div class="tp-grid">
+      <div class="tp-card tp1">
+        <div class="tp-label">到達 TP1（+1R）</div>
+        <div class="tp-pct">55.7%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:55.7%"></div></div>
+        <div class="tp-count">442 筆</div>
+      </div>
+      <div class="tp-card tp2">
+        <div class="tp-label">到達 TP2（+2R）</div>
+        <div class="tp-pct">4.8%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:4.8%"></div></div>
+        <div class="tp-count">38 筆</div>
+      </div>
+      <div class="tp-card tp3">
+        <div class="tp-label">到達 TP3（+3R）</div>
+        <div class="tp-pct">2.8%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:2.8%"></div></div>
+        <div class="tp-count">22 筆</div>
+      </div>
+      <div class="tp-card sl">
+        <div class="tp-label">觸發止損 SL</div>
+        <div class="tp-pct">36.8%</div>
+        <div class="bar-track"><div class="bar-fill" style="width:36.8%"></div></div>
+        <div class="tp-count">292 筆</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 詳細數據 -->
+  <div class="section">
+    <div class="section-label">詳細數據</div>
+    <div class="summary-card">
+      <div class="summary-row">
+        <span class="sr-label">平均每筆獲利</span>
+        <span class="sr-val green">+62.01 U</span>
+      </div>
+      <div class="summary-row">
+        <span class="sr-label">平均每筆虧損</span>
+        <span class="sr-val red">-54.13 U</span>
+      </div>
+      <div class="summary-row">
+        <span class="sr-label">總手續費支出</span>
+        <span class="sr-val">957.60 U</span>
+      </div>
+      <div class="summary-row">
+        <span class="sr-label">時間區間</span>
+        <span class="sr-val">1H K線</span>
+      </div>
+      <div class="summary-row">
+        <span class="sr-label">每筆倉位</span>
+        <span class="sr-val">10%（1,000U）</span>
+      </div>
+      <div class="summary-row">
+        <span class="sr-label">快線 / 慢線</span>
+        <span class="sr-val">EMA 120 / 240</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ 本報告為歷史回測數據，不代表未來獲利保證。加密貨幣交易具有高度風險，請自行評估風險承受能力後再做決策。
+  </div>
+
+</div>
+
+<!-- ══════════ PAGE: 排行榜 ══════════ -->
+<div id="page-rank" class="page">
+
+  <div class="header" style="padding-bottom:16px">
+    <div class="header-eyebrow">依勝率排序</div>
+    <h1>幣種<span>排行榜</span></h1>
+  </div>
+
+  <div class="tab-wrap">
+    <button class="tab-btn active" onclick="filterRank('all',this)">全部</button>
+    <button class="tab-btn" onclick="filterRank('win100',this)">勝率100%</button>
+    <button class="tab-btn" onclick="filterRank('win80',this)">勝率≥80%</button>
+    <button class="tab-btn" onclick="filterRank('pnl',this)">損益最高</button>
+    <button class="tab-btn" onclick="filterRank('loss',this)">虧損幣</button>
+  </div>
+
+  <div class="search-wrap">
+    <input class="search-input" type="search" placeholder="搜尋幣種，例：BTC" oninput="searchRank(this.value)">
+  </div>
+
+  <div class="section">
+    <div class="rank-list" id="rankList"></div>
+  </div>
+
+</div>
+
+<!-- ══════════ PAGE: 關於 ══════════ -->
+<div id="page-about" class="page">
+
+  <div class="header" style="padding-bottom:16px">
+    <div class="header-eyebrow">策略說明</div>
+    <h1>關於<span>此策略</span></h1>
+  </div>
+
+  <div class="about-card">
+    <h3>策略核心邏輯</h3>
+    <p>趨勢贏家【做多專用】基於 EMA120 與 EMA240 雙均線系統，專注於捕捉強勢上升趨勢中的回調進場機會。</p>
+    <div class="tag-row">
+      <span class="tag">EMA120 快線</span>
+      <span class="tag">EMA240 慢線</span>
+      <span class="tag">反紅區間</span>
+      <span class="tag">只做多</span>
+    </div>
+  </div>
+
+  <div class="about-card">
+    <h3>三個市場區間</h3>
+    <p><strong style="color:var(--green)">反綠區間</strong> — 快線在慢線之下（空頭趨勢），此策略不進場。<br><br>
+    <strong style="color:var(--amber)">反黃區間</strong> — 金叉後前 150 根 K 線，趨勢確立中，觀察等待。<br><br>
+    <strong style="color:var(--red)">反紅區間</strong> — 金叉後 150 根以上，快線向上且間距 &gt;2.5%，<strong style="color:var(--text)">唯一進場區間。</strong></p>
+  </div>
+
+  <div class="about-card">
+    <h3>進場 &amp; 出場規則</h3>
+    <p>進場：價格從下方穿越 EMA120，或低點觸及 EMA120 回彈。<br><br>
+    進場價 = EMA120<br>
+    止損 = EMA240<br>
+    TP1 = 進場 + 1R｜TP2 = +2R｜TP3 = +3R</p>
+  </div>
+
+  <div class="about-card">
+    <h3>回測參數</h3>
+    <p>本金 10,000 USDT｜每筆倉位 10%（1,000U）<br>手續費 0.06%（進出各一次）｜槓桿 1x<br>時間區間：幣安合約 1H K線<br>回測時間：近 2,000 根（約 83 天）</p>
+  </div>
+
+  <div class="disclaimer">
+    本網站僅供教育與研究目的，不構成任何投資建議。
+  </div>
+
+</div>
+
+<!-- ══════════ Bottom Nav ══════════ -->
+<nav class="bottom-nav">
+  <div class="nav-item active" onclick="switchPage('home',this)">
+    <div class="nav-icon">📊</div>
+    <div class="nav-label">總覽</div>
+  </div>
+  <div class="nav-item" onclick="switchPage('rank',this)">
+    <div class="nav-icon">🏆</div>
+    <div class="nav-label">排行榜</div>
+  </div>
+  <div class="nav-item" onclick="switchPage('about',this)">
+    <div class="nav-icon">📖</div>
+    <div class="nav-label">策略說明</div>
+  </div>
+</nav>
+
+<script>
+// ── 數據 ──
+const RAW = [
+  {s:"AKT",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:23.26},
+  {s:"ASR",total:2,wins:2,wr:100,tp1:2,tp2:0,tp3:0,sl:0,pnl:58.95},
+  {s:"B2",total:2,wins:2,wr:100,tp1:2,tp2:0,tp3:0,sl:0,pnl:55.87},
+  {s:"BEL",total:2,wins:2,wr:100,tp1:1,tp2:1,tp3:0,sl:0,pnl:297.31},
+  {s:"FORM",total:2,wins:2,wr:100,tp1:2,tp2:0,tp3:0,sl:0,pnl:47.16},
+  {s:"ESP",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:26.99},
+  {s:"CRWV",total:2,wins:2,wr:100,tp1:2,tp2:0,tp3:0,sl:0,pnl:54.71},
+  {s:"CLO",total:10,wins:10,wr:100,tp1:3,tp2:4,tp3:3,sl:0,pnl:1052.10},
+  {s:"C",total:2,wins:2,wr:100,tp1:1,tp2:1,tp3:0,sl:0,pnl:72.31},
+  {s:"BTW",total:4,wins:4,wr:100,tp1:3,tp2:1,tp3:0,sl:0,pnl:909.56},
+  {s:"EVAA",total:9,wins:9,wr:100,tp1:9,tp2:0,tp3:0,sl:0,pnl:938.60},
+  {s:"FF",total:3,wins:3,wr:100,tp1:3,tp2:0,tp3:0,sl:0,pnl:97.60},
+  {s:"H",total:8,wins:8,wr:100,tp1:1,tp2:7,tp3:0,sl:0,pnl:2133.51},
+  {s:"GPS",total:11,wins:11,wr:100,tp1:11,tp2:0,tp3:0,sl:0,pnl:330.22},
+  {s:"LUMIA",total:7,wins:7,wr:100,tp1:6,tp2:1,tp3:0,sl:0,pnl:483.86},
+  {s:"XPL",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:37.75},
+  {s:"VELVET",total:2,wins:2,wr:100,tp1:2,tp2:0,tp3:0,sl:0,pnl:549.05},
+  {s:"UAI",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:27.73},
+  {s:"QCOM",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:27.70},
+  {s:"SKHYNIX",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:57.14},
+  {s:"PARTI",total:2,wins:2,wr:100,tp1:1,tp2:1,tp3:0,sl:0,pnl:71.42},
+  {s:"MMT",total:1,wins:1,wr:100,tp1:1,tp2:0,tp3:0,sl:0,pnl:85.23},
+  {s:"JUP",total:4,wins:4,wr:100,tp1:4,tp2:0,tp3:0,sl:0,pnl:139.51},
+  {s:"LAB",total:4,wins:4,wr:100,tp1:3,tp2:0,tp3:1,sl:0,pnl:473.45},
+  {s:"HOME",total:9,wins:9,wr:100,tp1:9,tp2:0,tp3:0,sl:0,pnl:1035.35},
+  {s:"DEXE",total:13,wins:12,wr:92.31,tp1:5,tp2:1,tp3:6,sl:1,pnl:1045.65},
+  {s:"CATI",total:11,wins:10,wr:90.91,tp1:10,tp2:0,tp3:0,sl:1,pnl:230.22},
+  {s:"BANK",total:10,wins:9,wr:90,tp1:8,tp2:1,tp3:0,sl:1,pnl:242.11},
+  {s:"SNDK",total:9,wins:8,wr:88.89,tp1:8,tp2:0,tp3:0,sl:1,pnl:226.67},
+  {s:"ARC",total:9,wins:8,wr:88.89,tp1:7,tp2:0,tp3:1,sl:1,pnl:263.12},
+  {s:"BASED",total:8,wins:7,wr:87.5,tp1:7,tp2:0,tp3:0,sl:1,pnl:340.89},
+  {s:"BE",total:8,wins:7,wr:87.5,tp1:7,tp2:0,tp3:0,sl:1,pnl:224.87},
+  {s:"VELODROME",total:8,wins:7,wr:87.5,tp1:7,tp2:0,tp3:0,sl:1,pnl:383.83},
+  {s:"CRDO",total:7,wins:6,wr:85.71,tp1:6,tp2:0,tp3:0,sl:1,pnl:147.80},
+  {s:"龙虾",total:12,wins:10,wr:83.33,tp1:8,tp2:2,tp3:0,sl:2,pnl:545.05},
+  {s:"WLD",total:28,wins:23,wr:82.14,tp1:23,tp2:0,tp3:0,sl:5,pnl:916.87},
+  {s:"NEAR",total:5,wins:4,wr:80,tp1:4,tp2:0,tp3:0,sl:1,pnl:203.15},
+  {s:"AMAT",total:5,wins:4,wr:80,tp1:2,tp2:2,tp3:0,sl:1,pnl:209.54},
+  {s:"AIOT",total:5,wins:4,wr:80,tp1:4,tp2:0,tp3:0,sl:1,pnl:200.18},
+  {s:"USAR",total:5,wins:4,wr:80,tp1:2,tp2:1,tp3:1,sl:1,pnl:172.34},
+  {s:"HYPE",total:9,wins:7,wr:77.78,tp1:7,tp2:0,tp3:0,sl:2,pnl:271.01},
+  {s:"JCT",total:9,wins:7,wr:77.78,tp1:5,tp2:0,tp3:2,sl:2,pnl:580.14},
+  {s:"US",total:44,wins:34,wr:77.27,tp1:32,tp2:1,tp3:1,sl:10,pnl:1679.32},
+  {s:"MRVL",total:17,wins:13,wr:76.47,tp1:13,tp2:0,tp3:0,sl:4,pnl:460.55},
+  {s:"PORTAL",total:4,wins:3,wr:75,tp1:2,tp2:0,tp3:1,sl:1,pnl:227.11},
+  {s:"DYDX",total:8,wins:6,wr:75,tp1:6,tp2:0,tp3:0,sl:2,pnl:67.14},
+  {s:"COAI",total:8,wins:6,wr:75,tp1:6,tp2:0,tp3:0,sl:2,pnl:86.28},
+  {s:"GLW",total:4,wins:3,wr:75,tp1:3,tp2:0,tp3:0,sl:1,pnl:58.44},
+  {s:"SOXL",total:11,wins:8,wr:72.73,tp1:8,tp2:0,tp3:0,sl:3,pnl:241.17},
+  {s:"BLUAI",total:7,wins:5,wr:71.43,tp1:5,tp2:0,tp3:0,sl:2,pnl:114.56},
+  {s:"AKE",total:7,wins:5,wr:71.43,tp1:5,tp2:0,tp3:0,sl:2,pnl:32.31},
+  {s:"BEAT",total:19,wins:13,wr:68.42,tp1:12,tp2:1,tp3:0,sl:6,pnl:352.56},
+  {s:"RIF",total:6,wins:4,wr:66.67,tp1:4,tp2:0,tp3:0,sl:2,pnl:41.06},
+  {s:"HANA",total:6,wins:4,wr:66.67,tp1:4,tp2:0,tp3:0,sl:2,pnl:85.77},
+  {s:"BSB",total:3,wins:2,wr:66.67,tp1:2,tp2:0,tp3:0,sl:1,pnl:140.20},
+  {s:"OPEN",total:6,wins:4,wr:66.67,tp1:4,tp2:0,tp3:0,sl:2,pnl:91.83},
+  {s:"JTO",total:3,wins:2,wr:66.67,tp1:2,tp2:0,tp3:0,sl:1,pnl:21.38},
+  {s:"INJ",total:6,wins:4,wr:66.67,tp1:4,tp2:0,tp3:0,sl:2,pnl:115.20},
+  {s:"ALLO",total:37,wins:24,wr:64.86,tp1:20,tp2:2,tp3:2,sl:13,pnl:982.56},
+  {s:"FOLKS",total:17,wins:11,wr:64.71,tp1:11,tp2:0,tp3:0,sl:6,pnl:276.84},
+  {s:"IO",total:19,wins:12,wr:63.16,tp1:11,tp2:0,tp3:1,sl:7,pnl:280.07},
+  {s:"BAS",total:10,wins:6,wr:60,tp1:5,tp2:1,tp3:0,sl:4,pnl:89.66},
+  {s:"BEAT",total:19,wins:13,wr:60,tp1:12,tp2:1,tp3:0,sl:6,pnl:352.56},
+  {s:"APR",total:12,wins:7,wr:58.33,tp1:6,tp2:1,tp3:0,sl:5,pnl:189.02},
+  {s:"EPIC",total:7,wins:4,wr:57.14,tp1:4,tp2:0,tp3:0,sl:3,pnl:-44.10},
+  {s:"LIT",total:26,wins:13,wr:50,tp1:11,tp2:0,tp3:2,sl:13,pnl:-84.04},
+  {s:"GRASS",total:11,wins:5,wr:45.45,tp1:5,tp2:0,tp3:0,sl:6,pnl:-79.75},
+  {s:"SKYAI",total:9,wins:4,wr:44.44,tp1:4,tp2:0,tp3:0,sl:5,pnl:-27.43},
+  {s:"KMNO",total:5,wins:2,wr:40,tp1:2,tp2:0,tp3:0,sl:3,pnl:-59.45},
+  {s:"TRUTH",total:8,wins:3,wr:37.5,tp1:1,tp2:1,tp3:1,sl:5,pnl:-77.39},
+  {s:"SQD",total:9,wins:3,wr:33.33,tp1:3,tp2:0,tp3:0,sl:6,pnl:-154.84},
+  {s:"NBIS",total:12,wins:4,wr:33.33,tp1:3,tp2:1,tp3:0,sl:8,pnl:-105.83},
+  {s:"DRAM",total:7,wins:2,wr:28.57,tp1:2,tp2:0,tp3:0,sl:5,pnl:-136.31},
+  {s:"AIO",total:7,wins:2,wr:28.57,tp1:1,tp2:1,tp3:0,sl:5,pnl:-270.58},
+  {s:"AERO",total:8,wins:2,wr:25,tp1:2,tp2:0,tp3:0,sl:6,pnl:-286.74},
+  {s:"FIDA",total:4,wins:0,wr:0,tp1:0,tp2:0,tp3:0,sl:4,pnl:-434.51},
+  {s:"EDEN",total:3,wins:0,wr:0,tp1:0,tp2:0,tp3:0,sl:3,pnl:-496.74},
+  {s:"GWEI",total:9,wins:0,wr:0,tp1:0,tp2:0,tp3:0,sl:9,pnl:-756.84},
+  {s:"ZEREBRO",total:5,wins:0,wr:0,tp1:0,tp2:0,tp3:0,sl:5,pnl:-335.97},
+  {s:"EIGEN",total:2,wins:0,wr:0,tp1:0,tp2:0,tp3:0,sl:2,pnl:-165.13},
+];
+
+let currentFilter = 'all';
+let currentSearch = '';
+
+function getFilteredData() {
+  let data = [...RAW];
+  if (currentFilter === 'win100') data = data.filter(d => d.wr === 100);
+  else if (currentFilter === 'win80') data = data.filter(d => d.wr >= 80);
+  else if (currentFilter === 'pnl')  data = data.sort((a,b) => b.pnl - a.pnl);
+  else if (currentFilter === 'loss') data = data.filter(d => d.pnl < 0).sort((a,b) => a.pnl - b.pnl);
+  else data = data.sort((a,b) => b.wr - a.wr || b.total - a.total);
+
+  if (currentSearch) {
+    const q = currentSearch.toUpperCase();
+    data = data.filter(d => d.s.toUpperCase().includes(q));
+  }
+  return data;
+}
+
+function renderRank() {
+  const data = getFilteredData();
+  const list = document.getElementById('rankList');
+  if (!data.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">找不到符合的幣種</div>';
+    return;
+  }
+  list.innerHTML = data.map((d, i) => {
+    const numClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const pnlClass = d.pnl >= 0 ? 'pos' : 'neg';
+    const pnlStr  = (d.pnl >= 0 ? '+' : '') + d.pnl.toFixed(2) + ' U';
+    const wrColor = d.wr >= 70 ? 'var(--green)' : d.wr >= 50 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="rank-item">
+      <div class="rank-num ${numClass}">${i+1}</div>
+      <div class="rank-body">
+        <div class="rank-sym">${d.s}/USDT</div>
+        <div class="rank-meta">${d.total} 筆 · TP1:${d.tp1} TP2:${d.tp2} TP3:${d.tp3} SL:${d.sl}</div>
+      </div>
+      <div class="rank-right">
+        <div class="rank-wr" style="color:${wrColor}">${d.wr}%</div>
+        <div class="rank-pnl ${pnlClass}">${pnlStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterRank(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRank();
+}
+
+function searchRank(val) {
+  currentSearch = val;
+  renderRank();
+}
+
+function switchPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'rank') renderRank();
+  window.scrollTo(0, 0);
+}
+
+renderRank();
+</script>
+</body>
+</html>
